@@ -1,0 +1,27 @@
+{
+  "_notes": "Training data for String functions: char, concat, indexOf, lowercase, properCase, replace, substring, trim, uppercase",
+
+  "firstName": "sofia",
+  "lastName": "ROSSI",
+  "fullName": "  Sofia Rossi  ",
+  "email": "sofia.rossi@example.com",
+  "bio": "Marketing Cloud Next is a powerful platform for personalised customer journeys.",
+  "productCode": "SKU-001-PREMIUM",
+  "promoCode": "SAVE20",
+  "greeting": "hello world",
+  "paddedText": "   trim me please   ",
+  "bulletChar": 8226,
+  "starChar": 9733,
+  "dividerCode": 45,
+  "repeatCount": 5,
+  "searchTerm": "Cloud",
+  "replacement": "Commerce",
+  "tagline": "the quick brown fox jumps over the lazy dog",
+  "city": "new york",
+  "country": "united states",
+  "domain": "example.com",
+  "templateVersion": "v2.1.3",
+  "rawHtml": "<b>Bold</b> and <i>italic</i>",
+  "sku": "sku-deluxe-bundle",
+  "nullValue": null
+}

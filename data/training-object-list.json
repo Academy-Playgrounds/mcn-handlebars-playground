@@ -1,0 +1,27 @@
+{
+  "_notes": "Training data for Object & List functions: each, filter, flatten, get, map, slice",
+
+  "subscribers": [
+    { "id": 1, "firstName": "Miguel",  "lastName": "Santos",  "tier": "Gold",     "age": 34, "active": true,  "joinDate": "2021-03-15", "score": 87, "spend": 1240.50 },
+    { "id": 2, "firstName": "Lakshmi", "lastName": "Patel",   "tier": "Platinum", "age": 28, "active": true,  "joinDate": "2020-07-22", "score": 94, "spend": 4320.00 },
+    { "id": 3, "firstName": "Chen",    "lastName": "Wei",     "tier": "Silver",   "age": 45, "active": false, "joinDate": "2022-01-10", "score": 62, "spend": 380.75 },
+    { "id": 4, "firstName": "Amara",   "lastName": "Okafor",  "tier": "Gold",     "age": 31, "active": true,  "joinDate": "2021-11-05", "score": 78, "spend": 980.20 },
+    { "id": 5, "firstName": "James",   "lastName": "O'Brien", "tier": "Silver",   "age": 52, "active": true,  "joinDate": "2019-06-30", "score": 55, "spend": 210.00 },
+    { "id": 6, "firstName": "Sofia",   "lastName": "Rossi",   "tier": "Platinum", "age": 39, "active": true,  "joinDate": "2018-04-12", "score": 98, "spend": 7600.00 }
+  ],
+
+  "regionGroups": [
+    ["North America", "Canada", "Mexico"],
+    ["Europe", "UK", "France", "Germany"],
+    ["Asia Pacific", "Japan", "Australia", "Singapore"]
+  ],
+
+  "productLookup": {
+    "SKU-001": "Premium Widget",
+    "SKU-002": "Standard Widget",
+    "SKU-003": "Economy Widget",
+    "SKU-004": "Deluxe Bundle"
+  },
+
+  "featuredSkus": ["SKU-001", "SKU-004", "SKU-002", "SKU-003", "SKU-001", "SKU-004"]
+}

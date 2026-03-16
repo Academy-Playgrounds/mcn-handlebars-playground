@@ -1,0 +1,41 @@
+{
+  "_notes": "Training data for Utility functions: fallback, format, formatCurrency, formatNumber, length, repeat, set, sort, with",
+
+  "firstName": "Amara",
+  "lastName": "Okafor",
+  "nickname": null,
+  "bio": "Loyal customer since 2021.",
+  "spend": 980.20,
+  "score": 78,
+  "loyaltyPoints": 3450,
+  "conversionRate": 0.0312,
+  "taxRate": 0.085,
+  "orderDate": "2024-11-20T10:30:00",
+  "eventDate": "2025-09-15T00:00:00",
+  "currency": "USD",
+  "locale": "en-US",
+  "emptyField": null,
+  "fallbackName": "Valued Customer",
+  "repeatStars": 5,
+
+  "orders": [
+    { "id": "ORD-1042", "product": "Deluxe Bundle",    "qty": 2, "unitPrice": 149.99, "date": "2024-11-20", "status": "Shipped"   },
+    { "id": "ORD-0987", "product": "Premium Widget",   "qty": 1, "unitPrice": 89.95,  "date": "2024-09-05", "status": "Delivered" },
+    { "id": "ORD-1105", "product": "Economy Widget",   "qty": 5, "unitPrice": 19.99,  "date": "2025-01-03", "status": "Shipped"   },
+    { "id": "ORD-1210", "product": "Standard Widget",  "qty": 3, "unitPrice": 54.50,  "date": "2025-02-14", "status": "Pending"   }
+  ],
+
+  "address": {
+    "street": "42 Maple Avenue",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78701",
+    "country": "USA"
+  },
+
+  "preferences": {
+    "theme": "dark",
+    "notifications": true,
+    "language": "en"
+  }
+}
