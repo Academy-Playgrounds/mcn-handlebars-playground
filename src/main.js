@@ -458,8 +458,6 @@ refToggle.addEventListener('click', () => {
 });
 
 // ── Drag-to-resize panels ─────────────────────
-const outputFrame = document.getElementById('outputFrame');
-
 function makeSplitter(divider, leftEl, isVertical, defaultPct = 50) {
   let dragging = false, startPos = 0, startSize = 0, totalSize = 0;
 
