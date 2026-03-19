@@ -10,6 +10,13 @@
 
   <!-- Header -->
   <header class="header">
+    <a href="/" class="header-logo">
+    <img 
+      src="AcademyImage_WhiteText.png" 
+      alt="ListEngage Academy" 
+      class="logo-img"
+    >
+  </a>
     <div class="header-left">
       <span class="header-title">MCN Handlebars Playground</span>
       <span class="header-sub">Marketing Cloud Next · Handlebars.Net</span>
@@ -34,17 +41,48 @@
         </div>
         <textarea id="templateEditor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
       </div>
-      <div class="pane-divider" id="hDivider"></div>
+      <div class="pane-divider" id="hDivider" title="Drag to resize · Double-click to reset"></div>
       <div class="pane pane-data">
-        <div class="pane-label">Data (JSON)
-          <span class="pane-hint">Edit inline or load from <code>data/</code> folder</span>
+        <!-- Data tab bar -->
+        <div class="data-tabs">
+          <button class="data-tab active" data-tab="JSON">JSON Payload</button>
+          <button class="data-tab" data-tab="datagraph">Data Graph</button>
         </div>
-        <textarea id="dataEditor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <!-- JSON Payload panel -->
+        <div class="data-tab-panel" id="panel-JSON">
+          <div class="pane-label">
+            JSON Payload
+            <span class="pane-hint">OCP context · edit or load from <code>data/</code></span>
+            <div class="tab-actions">
+              <label class="btn-csv-upload" title="Parse CSV and load into editor">
+                ↑ Upload CSV
+                <input type="file" id="JSONCsvInput" accept=".csv">
+              </label>
+              <button id="JSONRemoveBtn" class="btn-remove-csv" style="display:none" title="Clear CSV data from this tab">✕ Remove CSV</button>
+            </div>
+          </div>
+          <textarea id="dataEditor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        </div>
+        <!-- Data Graph panel -->
+        <div class="data-tab-panel hidden" id="panel-datagraph">
+          <div class="pane-label">
+            Data Graph
+            <span class="pane-hint">$dataGraph · use <code>{{get (get @root "$dataGraph") "field"}}</code></span>
+            <div class="tab-actions">
+              <label class="btn-csv-upload" title="Parse CSV and load into editor">
+                ↑ Upload CSV
+                <input type="file" id="dataGraphCsvInput" accept=".csv">
+              </label>
+              <button id="dataGraphRemoveBtn" class="btn-remove-csv" style="display:none" title="Clear CSV data from this tab">✕ Remove CSV</button>
+            </div>
+          </div>
+          <textarea id="dataGraphEditor" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="{}"></textarea>
+        </div>
       </div>
     </div>
 
     <!-- Vertical splitter -->
-    <div class="panel-divider" id="vDivider"></div>
+    <div class="panel-divider" id="vDivider" title="Drag to resize · Double-click to reset"></div>
 
     <!-- Right: output -->
     <div class="panel panel-right">

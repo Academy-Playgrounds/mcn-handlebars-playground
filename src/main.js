@@ -6,16 +6,28 @@ import { SAMPLES } from './samples.js';
 registerMCNHelpers(Handlebars);
 
 // ── DOM refs ──────────────────────────────────
-const templateEditor  = document.getElementById('templateEditor');
-const dataEditor      = document.getElementById('dataEditor');
-const outputFrame     = document.getElementById('outputFrame');
-const errorConsole    = document.getElementById('errorConsole');
-const sampleSelect    = document.getElementById('sampleSelect');
-const dataFileSelect  = document.getElementById('dataFileSelect');
-const reloadDataBtn   = document.getElementById('reloadDataBtn');
-const clearConsole    = document.getElementById('clearConsole');
-const refContent      = document.getElementById('refContent');
-const refTabs         = document.querySelectorAll('.ref-tab');
+const templateEditor   = document.getElementById('templateEditor');
+const dataEditor       = document.getElementById('dataEditor');
+const dataGraphEditor  = document.getElementById('dataGraphEditor');
+const outputFrame      = document.getElementById('outputFrame');
+const errorConsole     = document.getElementById('errorConsole');
+const sampleSelect     = document.getElementById('sampleSelect');
+const dataFileSelect   = document.getElementById('dataFileSelect');
+const reloadDataBtn    = document.getElementById('reloadDataBtn');
+const clearConsole     = document.getElementById('clearConsole');
+const refContent       = document.getElementById('refContent');
+const refTabs          = document.querySelectorAll('.ref-tab');
+
+// Data tabs
+const dataTabs          = document.querySelectorAll('.data-tab');
+const jsonPanel         = document.getElementById('panel-JSON');
+const dataGraphPanel    = document.getElementById('panel-datagraph');
+
+// CSV controls
+const jsonCsvInput      = document.getElementById('JSONCsvInput');
+const dataGraphCsvInput = document.getElementById('dataGraphCsvInput');
+const jsonRemoveBtn     = document.getElementById('JSONRemoveBtn');
+const dataGraphRemoveBtn = document.getElementById('dataGraphRemoveBtn');
 
 // ── Load data files via Vite's import.meta.glob ──
 // Eagerly import all JSON files from the data/ folder.
@@ -53,29 +65,129 @@ function populateDataFileSelect() {
 populateSampleSelect();
 populateDataFileSelect();
 
+// ── Data tab switching ────────────────────────
+dataTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    dataTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    jsonPanel.classList.toggle('hidden', target !== 'JSON');
+    dataGraphPanel.classList.toggle('hidden', target !== 'datagraph');
+  });
+});
+
+// ── CSV parsing ───────────────────────────────
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 1) return [];
+
+  // Parse a single CSV line respecting quoted fields
+  function parseLine(line) {
+    const vals = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = !inQ;
+      } else if (ch === ',' && !inQ) {
+        vals.push(cur); cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    vals.push(cur);
+    return vals.map(v => v.trim());
+  }
+
+  const headers = parseLine(lines[0]);
+  if (lines.length === 1) return [Object.fromEntries(headers.map(h => [h, '']))];
+
+  return lines.slice(1).map(line => {
+    const vals = parseLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
+    return obj;
+  });
+}
+
+function loadCSV(file, editor, removeBtn) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const rows = parseCSV(e.target.result);
+      editor.value = JSON.stringify(rows, null, 2);
+      removeBtn.style.display = '';
+      removeBtn.title = `Remove CSV data (${file.name})`;
+      scheduleRender();
+      logInfo(`CSV loaded: ${file.name} → ${rows.length} row(s)`);
+    } catch (err) {
+      logError(`CSV parse failed: ${err.message}`);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// JSON Payload CSV
+jsonCsvInput.addEventListener('change', e => {
+  loadCSV(e.target.files[0], dataEditor, jsonRemoveBtn);
+  jsonCsvInput.value = '';  // allow re-upload of same file
+});
+
+jsonRemoveBtn.addEventListener('click', () => {
+  dataEditor.value = '{}';
+  jsonRemoveBtn.style.display = 'none';
+  scheduleRender();
+  logInfo('JSON Payload CSV data removed');
+});
+
+// Data Graph CSV
+dataGraphCsvInput.addEventListener('change', e => {
+  loadCSV(e.target.files[0], dataGraphEditor, dataGraphRemoveBtn);
+  dataGraphCsvInput.value = '';
+});
+
+dataGraphRemoveBtn.addEventListener('click', () => {
+  dataGraphEditor.value = '{}';
+  dataGraphRemoveBtn.style.display = 'none';
+  scheduleRender();
+  logInfo('Data Graph CSV data removed');
+});
+
 // ── Rendering ────────────────────────────────
 let renderTimer = null;
 
 function render() {
-  const template = templateEditor.value;
-  const dataRaw  = dataEditor.value;
+  const template  = templateEditor.value;
+  const apexRaw   = dataEditor.value;
+  const graphRaw  = dataGraphEditor.value;
 
   if (!template.trim()) {
     setOutput('<p style="color:#888;font-family:sans-serif;padding:16px">Write a template to see output here.</p>');
     return;
   }
 
-  let data;
+  let apexData = {}, graphData = {};
   try {
-    data = dataRaw.trim() ? JSON.parse(dataRaw) : {};
+    apexData = apexRaw.trim() ? JSON.parse(apexRaw) : {};
   } catch (e) {
-    logError(`JSON parse error: ${e.message}`);
+    logError(`Apex JSON error: ${e.message}`);
+    return;
+  }
+  try {
+    graphData = graphRaw.trim() ? JSON.parse(graphRaw) : {};
+  } catch (e) {
+    logError(`Data Graph JSON error: ${e.message}`);
     return;
   }
 
+  // Merge: apex data at root + data graph under '$dataGraph' key
+  const renderData = Object.assign({}, apexData, { '$dataGraph': graphData });
+
   try {
     const compiled = Handlebars.compile(template);
-    const html = compiled(data);
+    const html = compiled(renderData);
     setOutput(html);
     logOK('Rendered OK');
   } catch (e) {
@@ -95,7 +207,7 @@ function setOutput(html) {
 <meta charset="UTF-8">
 <style>
   body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px;
-         color: #222; padding: 16px; line-height: 1.6; }
+         color: #222; background: #ffffff; padding: 16px; line-height: 1.6; }
   pre { background: #f5f5f5; padding: 10px; border-radius: 4px;
         overflow-x: auto; font-size: 12px; }
   table { border-collapse: collapse; width: 100%; }
@@ -200,7 +312,7 @@ templateEditor.addEventListener('input', scheduleRender);
 dataEditor.addEventListener('input', scheduleRender);
 
 // Tab key → insert 2 spaces in textareas
-[templateEditor, dataEditor].forEach(ta => {
+[templateEditor, dataEditor, dataGraphEditor].forEach(ta => {
   ta.addEventListener('keydown', e => {
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -346,40 +458,59 @@ refToggle.addEventListener('click', () => {
 });
 
 // ── Drag-to-resize panels ─────────────────────
-function makeSplitter(divider, leftEl, isVertical) {
-  let dragging = false, startPos = 0, startSize = 0;
+const outputFrame = document.getElementById('outputFrame');
+
+function makeSplitter(divider, leftEl, isVertical, defaultPct = 50) {
+  let dragging = false, startPos = 0, startSize = 0, totalSize = 0;
 
   divider.addEventListener('mousedown', e => {
     dragging = true;
     divider.classList.add('dragging');
-    startPos = isVertical ? e.clientX : e.clientY;
-    startSize = isVertical ? leftEl.offsetWidth : leftEl.offsetHeight;
+    startPos    = isVertical ? e.clientX : e.clientY;
+    startSize   = isVertical ? leftEl.offsetWidth : leftEl.offsetHeight;
+    totalSize   = isVertical ? divider.parentElement.offsetWidth : leftEl.parentElement.offsetHeight;
+    // Prevent iframe from swallowing mouse events during drag
+    if (outputFrame) outputFrame.style.pointerEvents = 'none';
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = isVertical ? 'col-resize' : 'row-resize';
     e.preventDefault();
   });
 
   document.addEventListener('mousemove', e => {
     if (!dragging) return;
-    const delta = isVertical ? e.clientX - startPos : e.clientY - startPos;
+    const delta  = isVertical ? e.clientX - startPos : e.clientY - startPos;
     const newSize = startSize + delta;
+    const pct    = Math.max(5, Math.min(95, (newSize / totalSize) * 100));
     if (isVertical) {
-      const total = divider.parentElement.offsetWidth;
-      const pct = Math.max(15, Math.min(85, (newSize / total) * 100));
       leftEl.style.width = pct + '%';
     } else {
-      const total = leftEl.parentElement.offsetHeight;
-      const pct = Math.max(15, Math.min(85, (newSize / total) * 100));
-      leftEl.style.flex = 'none';
+      leftEl.style.flex   = 'none';
       leftEl.style.height = pct + '%';
     }
   });
 
   document.addEventListener('mouseup', () => {
-    if (dragging) { dragging = false; divider.classList.remove('dragging'); }
+    if (!dragging) return;
+    dragging = false;
+    divider.classList.remove('dragging');
+    if (outputFrame) outputFrame.style.pointerEvents = '';
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+  });
+
+  // Double-click to reset to default split
+  divider.addEventListener('dblclick', () => {
+    if (isVertical) {
+      leftEl.style.width = defaultPct + '%';
+    } else {
+      leftEl.style.flex   = '';
+      leftEl.style.height = '';
+    }
   });
 }
 
-makeSplitter(document.getElementById('vDivider'), document.querySelector('.panel-left'), true);
-makeSplitter(document.getElementById('hDivider'), document.querySelector('.pane-template'), false);
+makeSplitter(document.getElementById('vDivider'), document.querySelector('.panel-left'), true, 50);
+makeSplitter(document.getElementById('hDivider'), document.querySelector('.pane-template'), false, 60);
 
 // ── Escape HTML for console output ───────────
 function escHtml(s) {

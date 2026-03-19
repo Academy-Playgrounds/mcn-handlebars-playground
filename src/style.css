@@ -51,7 +51,7 @@ select {
 }
 select:focus { outline: none; border-color: var(--accent); }
 button {
-  background: var(--surface);
+  background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 4px;
@@ -60,6 +60,23 @@ button {
   cursor: pointer;
 }
 button:hover { background: var(--surface2); }
+
+/* ── Header Logo ── */
+.header-logo {
+  display: block;
+  line-height: 0;
+  flex-shrink: 0;
+  background-color: var(--surface2);         
+  padding: 1px 8px;                
+  border-radius: 8px;  
+}
+.logo-img {
+  height: 30px;
+  width: auto;
+  max-height: 52px;
+  display: block;
+  object-fit: contain;
+}
 
 /* ── Workspace ── */
 .workspace {
@@ -70,18 +87,37 @@ button:hover { background: var(--surface2); }
 }
 
 /* ── Panels ── */
-.panel { display: flex; flex-direction: column; overflow: hidden; min-width: 200px; }
+.panel { display: flex; flex-direction: column; overflow: hidden; min-width: 60px; }
 .panel-left { width: 50%; flex-shrink: 0; }
 .panel-right { flex: 1; overflow: hidden; }
 
 .panel-divider {
-  width: 5px;
+  width: 8px;
   background: var(--border);
   cursor: col-resize;
   flex-shrink: 0;
   transition: background 0.15s;
+  position: relative;
+  user-select: none;
+}
+.panel-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 32px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--surface2) 0px, var(--surface2) 3px,
+    transparent 3px, transparent 6px
+  );
+  border-radius: 2px;
+  opacity: 0.7;
 }
 .panel-divider:hover, .panel-divider.dragging { background: var(--accent); }
+.panel-divider:hover::after, .panel-divider.dragging::after { opacity: 1; }
 
 /* ── Panes ── */
 .pane { display: flex; flex-direction: column; overflow: hidden; flex: 1; min-height: 60px; }
@@ -90,8 +126,32 @@ button:hover { background: var(--surface2); }
 .pane-output { flex: 3; }
 .pane-errors { flex: 1; min-height: 60px; }
 
-.pane-divider { height: 5px; background: var(--border); cursor: row-resize; flex-shrink: 0; }
+.pane-divider {
+  height: 8px;
+  background: var(--border);
+  cursor: row-resize;
+  flex-shrink: 0;
+  position: relative;
+  user-select: none;
+}
+.pane-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 2px;
+  width: 32px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--surface2) 0px, var(--surface2) 3px,
+    transparent 3px, transparent 6px
+  );
+  border-radius: 2px;
+  opacity: 0.7;
+}
 .pane-divider:hover { background: var(--accent2); }
+.pane-divider:hover::after { opacity: 1; }
 
 .pane-label {
   display: flex;
@@ -128,7 +188,7 @@ textarea::selection { background: #4a4a7a; }
 #outputFrame {
   flex: 1;
   border: none;
-  background: #fff;
+  background: #ffffff;
   width: 100%;
 }
 
@@ -227,6 +287,84 @@ textarea::selection { background: #4a4a7a; }
 .ref-desc { font-size: 11px; color: var(--text-dim); }
 .ref-deviation { color: var(--orange); font-size: 11px; line-height: 1.5; padding: 2px 0; }
 .ref-deviation strong { color: var(--yellow); }
+
+/* ── Data tabs ── */
+.data-tabs {
+  display: flex;
+  flex-shrink: 0;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.data-tab {
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  padding: 5px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.data-tab:hover { background: var(--surface); color: var(--text); }
+.data-tab.active {
+  background: var(--surface);
+  color: var(--accent2);
+  border-bottom: 2px solid var(--accent2);
+}
+
+.data-tab-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+.data-tab-panel.hidden { display: none; }
+.hidden { display: none !important; }
+
+/* ── Pane label with tab actions ── */
+.tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.btn-csv-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-csv-upload:hover { background: var(--surface2); }
+.btn-csv-upload input[type="file"] { display: none; }
+
+.btn-remove-csv {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--red);
+  border-radius: 4px;
+  color: var(--red);
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-remove-csv:hover { background: rgba(243,139,168,0.12); }
 
 /* ── Scrollbars ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
