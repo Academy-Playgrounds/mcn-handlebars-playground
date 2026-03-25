@@ -1,26 +1,28 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #1e1e2e;
-  --bg2: #181825;
-  --bg3: #11111b;
-  --surface: #313244;
-  --surface2: #45475a;
-  --border: #45475a;
-  --text: #cdd6f4;
-  --text-dim: #6c7086;
-  --text-muted: #a6adc8;
-  --accent: #89b4fa;
-  --accent2: #cba6f7;
-  --green: #a6e3a1;
-  --yellow: #f9e2af;
-  --red: #f38ba8;
-  --orange: #fab387;
+  --bg: #0f1117;
+  --bg2: #0d1b2a;
+  --bg3: #07101c;
+  --surface: #1e3a5f;
+  --surface2: #3a5a80;
+  --border: #1e3a5f;
+  --text: #e0e0e0;
+  --text-dim: #7b9ec4;
+  --text-muted: #7b9ec4;
+  --accent: #0070d2;
+  --accent2: #60a5fa;
+  --input-bg: #1a1f2e;
+  --editor-bg: #111827;
+  --green: #86efac;
+  --yellow: #fcd34d;
+  --red: #f87171;
+  --orange: #fb8500;
   --header-h: 44px;
   --ref-h: 180px;
 }
 
-html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg3); color: var(--text); font-size: 13px; }
+html, body { height: 100%; overflow: hidden; font-family: Arial, sans-serif; background: var(--bg3); color: var(--text); font-size: 13px; }
 body { display: flex; flex-direction: column; }
 
 /* ── Header ── */
@@ -36,12 +38,12 @@ body { display: flex; flex-direction: column; }
   flex-shrink: 0;
 }
 .header-left { display: flex; align-items: baseline; gap: 10px; }
-.header-title { font-weight: 700; font-size: 14px; color: var(--accent); }
+.header-title { font-weight: 700; font-size: 14px; color: #fff; }
 .header-sub { font-size: 11px; color: var(--text-dim); }
 .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto; }
 .label { color: var(--text-muted); font-size: 11px; }
 select {
-  background: var(--surface);
+  background: var(--input-bg);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 4px;
@@ -51,31 +53,35 @@ select {
 }
 select:focus { outline: none; border-color: var(--accent); }
 button {
-  background: var(--surface2);
+  background: var(--input-bg);
   border: 1px solid var(--border);
-  color: var(--text);
+  color: var(--text-dim);
   border-radius: 4px;
   padding: 3px 9px;
   font-size: 12px;
   cursor: pointer;
 }
-button:hover { background: var(--surface2); }
+button:hover { border-color: var(--accent); color: #fff; }
 
 /* ── Header Logo ── */
 .header-logo {
   display: block;
   line-height: 0;
   flex-shrink: 0;
-  background-color: var(--surface2);         
-  padding: 1px 8px;                
-  border-radius: 8px;  
 }
 .logo-img {
   height: 30px;
   width: auto;
-  max-height: 52px;
   display: block;
-  object-fit: contain;
+}
+.badge {
+  background: #0070d2;
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
 }
 
 /* ── Workspace ── */
@@ -172,7 +178,7 @@ button:hover { background: var(--surface2); }
 
 textarea {
   flex: 1;
-  background: var(--bg);
+  background: #282A36;
   color: var(--text);
   border: none;
   resize: none;
@@ -183,7 +189,7 @@ textarea {
   outline: none;
   tab-size: 2;
 }
-textarea::selection { background: #4a4a7a; }
+textarea::selection { background: var(--surface2); }
 
 #outputFrame {
   flex: 1;
@@ -200,7 +206,7 @@ textarea::selection { background: #4a4a7a; }
   font-family: monospace;
   font-size: 12px;
   line-height: 1.5;
-  background: var(--bg3);
+  background: var(--editor-bg);
 }
 .log-error { color: var(--red); }
 .log-warn  { color: var(--yellow); }
@@ -367,7 +373,7 @@ textarea::selection { background: #4a4a7a; }
 .btn-remove-csv:hover { background: rgba(243,139,168,0.12); }
 
 /* ── Scrollbars ── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg3); }
-::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #4a90d9; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #6aaff0; }
