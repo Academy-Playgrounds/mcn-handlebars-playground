@@ -301,7 +301,6 @@ dgDeleteBtn.addEventListener('click', () => {
   const lib = dgGetLibrary();
   const idx = parseInt(dgLibrarySelect.value);
   if (!lib[idx]) return;
-  if (!window.confirm(`Delete "${lib[idx].name}"?`)) return;
   const gone = lib[idx].name;
   lib.splice(idx, 1);
   if (!lib.length) lib.push({ name: '001', json: '{}' });
