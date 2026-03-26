@@ -16,7 +16,6 @@ const outputFrame      = document.getElementById('outputFrame');
 const errorConsole     = document.getElementById('errorConsole');
 const sampleSelect     = document.getElementById('sampleSelect');
 const dataFileSelect   = document.getElementById('dataFileSelect');
-const reloadDataBtn    = document.getElementById('reloadDataBtn');
 const clearConsole     = document.getElementById('clearConsole');
 const refContent       = document.getElementById('refContent');
 const refTabs          = document.querySelectorAll('.ref-tab');
@@ -295,12 +294,6 @@ sampleSelect.addEventListener('change', () => {
 dataFileSelect.addEventListener('change', () => {
   loadDataFile(dataFileSelect.value);
   render();
-});
-
-reloadDataBtn.addEventListener('click', () => {
-  loadDataFile(dataFileSelect.value);
-  render();
-  logInfo(`Reloaded ${dataFileSelect.value}.json`);
 });
 
 function loadDataFile(name) {
