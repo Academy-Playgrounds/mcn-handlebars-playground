@@ -481,6 +481,20 @@ function checkHtml(text) {
   // Strip while preserving newlines so line numbers stay accurate
   const preserve = m => '\n'.repeat((m.match(/\n/g) || []).length);
   let s = text;
+
+  // Collapse {{#each}}...{{/each}} blocks entirely (including their HTML content)
+  // so conditional <tr>/<td> patterns inside loops don't produce false positives.
+  // Repeat until no more matches to handle nested each blocks.
+  let eachCount = 0;
+  let prev;
+  do {
+    prev = s;
+    s = s.replace(/\{\{#each\b[\s\S]*?\{\{\/each\}\}/g, m => {
+      eachCount++;
+      return preserve(m);
+    });
+  } while (s !== prev);
+
   s = s.replace(/\{\{[\s\S]*?\}\}/g, preserve);
   s = s.replace(/<style[\s\S]*?<\/style>/gi, preserve);
   s = s.replace(/<script[\s\S]*?<\/script>/gi, preserve);
@@ -530,6 +544,9 @@ function checkHtml(text) {
   });
 
   if (errors === 0) logOK('HTML Check: No tag issues found ✓');
+  if (eachCount > 0) {
+    logWarn(`HTML Check: ${eachCount} {{#each}} block${eachCount > 1 ? 's' : ''} skipped — conditional <tr>/<td> patterns inside loops cannot be statically verified.`);
+  }
 }
 
 document.getElementById('checkHtmlBtn').addEventListener('click', () => {
