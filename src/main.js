@@ -1,12 +1,15 @@
 import Handlebars from 'handlebars';
 import { registerMCNHelpers } from './mcn-helpers.js';
 import { SAMPLES } from './samples.js';
+import { EditorView, basicSetup } from 'codemirror';
+import { html } from '@codemirror/lang-html';
+import { oneDark } from '@codemirror/theme-one-dark';
 
 // ── Register all MCN helpers ──────────────────
 registerMCNHelpers(Handlebars);
 
 // ── DOM refs ──────────────────────────────────
-const templateEditor   = document.getElementById('templateEditor');
+const templateEditorEl = document.getElementById('templateEditor');
 const dataEditor       = document.getElementById('dataEditor');
 const dataGraphEditor  = document.getElementById('dataGraphEditor');
 const outputFrame      = document.getElementById('outputFrame');
@@ -22,6 +25,25 @@ const refTabs          = document.querySelectorAll('.ref-tab');
 const dataTabs          = document.querySelectorAll('.data-tab');
 const jsonPanel         = document.getElementById('panel-JSON');
 const dataGraphPanel    = document.getElementById('panel-datagraph');
+
+// ── CodeMirror template editor ────────────────
+const view = new EditorView({
+  doc: '',
+  extensions: [
+    basicSetup,
+    html(),
+    oneDark,
+    EditorView.updateListener.of(update => {
+      if (update.docChanged) scheduleRender();
+    }),
+    EditorView.theme({
+      '&': { height: '100%', fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace" },
+      '.cm-scroller': { overflow: 'auto', fontFamily: 'inherit' },
+      '.cm-content': { caretColor: '#fff' },
+    }),
+  ],
+  parent: templateEditorEl,
+});
 
 // CSV controls
 const jsonCsvInput      = document.getElementById('JSONCsvInput');
@@ -159,7 +181,7 @@ dataGraphRemoveBtn.addEventListener('click', () => {
 let renderTimer = null;
 
 function render() {
-  const template  = templateEditor.value;
+  const template  = view.state.doc.toString();
   const apexRaw   = dataEditor.value;
   const graphRaw  = dataGraphEditor.value;
 
@@ -259,7 +281,7 @@ sampleSelect.addEventListener('change', () => {
   const sample = SAMPLES[idx];
   if (!sample || !sample.template) return;
 
-  templateEditor.value = sample.template;
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: sample.template } });
 
   // If the sample suggests a data file, switch to it
   if (sample.dataFile && dataFiles[sample.dataFile]) {
@@ -308,11 +330,10 @@ if (import.meta.hot) {
 }
 
 // ── Editor events ────────────────────────────
-templateEditor.addEventListener('input', scheduleRender);
 dataEditor.addEventListener('input', scheduleRender);
 
-// Tab key → insert 2 spaces in textareas
-[templateEditor, dataEditor, dataGraphEditor].forEach(ta => {
+// Tab key → insert 2 spaces in textareas (CodeMirror handles its own Tab)
+[dataEditor, dataGraphEditor].forEach(ta => {
   ta.addEventListener('keydown', e => {
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -430,13 +451,13 @@ function renderRefContent(cat) {
 }
 
 function insertHelper(name, syntax) {
-  // Insert a simple usage snippet at the cursor in the template editor
-  const snip = syntax.split('\n')[0]; // first line of syntax
-  const start = templateEditor.selectionStart;
-  const val = templateEditor.value;
-  templateEditor.value = val.slice(0, start) + snip + val.slice(start);
-  templateEditor.selectionStart = templateEditor.selectionEnd = start + snip.length;
-  templateEditor.focus();
+  const snip = syntax.split('\n')[0];
+  const pos = view.state.selection.main.head;
+  view.dispatch({
+    changes: { from: pos, insert: snip },
+    selection: { anchor: pos + snip.length },
+  });
+  view.focus();
   scheduleRender();
 }
 
@@ -455,6 +476,68 @@ refToggle.addEventListener('click', () => {
   const collapsed = refBar.classList.toggle('collapsed');
   refToggle.textContent = collapsed ? '▲ Show' : '▼ Hide';
   refToggle.title = collapsed ? 'Expand reference panel' : 'Collapse reference panel';
+});
+
+// ── HTML tag checker ──────────────────────────
+const VOID_TAGS = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+
+function checkHtml(text) {
+  // Strip while preserving newlines so line numbers stay accurate
+  const preserve = m => '\n'.repeat((m.match(/\n/g) || []).length);
+  let s = text;
+  s = s.replace(/\{\{[\s\S]*?\}\}/g, preserve);
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, preserve);
+  s = s.replace(/<script[\s\S]*?<\/script>/gi, preserve);
+  s = s.replace(/<!--[\s\S]*?-->/g, preserve);
+  s = s.replace(/<!DOCTYPE[^>]*>/gi, '');
+
+  const lineAt = pos => (s.slice(0, pos).match(/\n/g) || []).length + 1;
+
+  const stack = []; // entries: { tag, line }
+  const tagRe = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)(\s(?:[^"'>\/]|"[^"]*"|'[^']*')*)?(\/?)>/g;
+  let errors = 0;
+  let match;
+
+  while ((match = tagRe.exec(s)) !== null) {
+    const isClose  = match[1] === '/';
+    const tagName  = match[2].toLowerCase();
+    const selfClose = match[4] === '/';
+    const line = lineAt(match.index);
+
+    if (VOID_TAGS.has(tagName) || selfClose) continue;
+
+    if (isClose) {
+      // Search stack from top for a matching open tag
+      let idx = -1;
+      for (let i = stack.length - 1; i >= 0; i--) {
+        if (stack[i].tag === tagName) { idx = i; break; }
+      }
+      if (idx === -1) {
+        logError(`HTML Check: Line ${line} — Unexpected </${tagName}>, no open <${tagName}>`);
+        errors++;
+      } else {
+        while (stack.length > idx + 1) {
+          const u = stack.pop();
+          logError(`HTML Check: Line ${u.line} — Unclosed <${u.tag}>`);
+          errors++;
+        }
+        stack.pop();
+      }
+    } else {
+      stack.push({ tag: tagName, line });
+    }
+  }
+
+  stack.forEach(({ tag, line }) => {
+    logError(`HTML Check: Line ${line} — Unclosed <${tag}>`);
+    errors++;
+  });
+
+  if (errors === 0) logOK('HTML Check: No tag issues found ✓');
+}
+
+document.getElementById('checkHtmlBtn').addEventListener('click', () => {
+  checkHtml(view.state.doc.toString());
 });
 
 // ── Drag-to-resize panels ─────────────────────
@@ -531,7 +614,7 @@ if (firstFile) {
 sampleSelect.value = 1;
 const firstSample = SAMPLES[1];
 if (firstSample) {
-  templateEditor.value = firstSample.template;
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: firstSample.template } });
   if (firstSample.dataFile && dataFiles[firstSample.dataFile]) {
     dataFileSelect.value = firstSample.dataFile;
     loadDataFile(firstSample.dataFile);
