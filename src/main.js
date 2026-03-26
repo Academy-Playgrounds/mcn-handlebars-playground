@@ -11,10 +11,12 @@ import { oneDark } from '@codemirror/theme-one-dark';
 registerMCNHelpers(Handlebars);
 
 // ── DOM refs ──────────────────────────────────
-const templateEditorEl = document.getElementById('templateEditor');
-const dataEditor       = document.getElementById('dataEditor');
-const dataGraphEditor  = document.getElementById('dataGraphEditor');
-const outputFrame      = document.getElementById('outputFrame');
+const templateEditorEl    = document.getElementById('templateEditor');
+const dataEditor          = document.getElementById('dataEditor');
+const dataGraphEditor     = document.getElementById('dataGraphEditor');
+const dataEditorNums      = document.getElementById('dataEditorNums');
+const dataGraphEditorNums = document.getElementById('dataGraphEditorNums');
+const outputFrame         = document.getElementById('outputFrame');
 const errorConsole     = document.getElementById('errorConsole');
 const sampleSelect     = document.getElementById('sampleSelect');
 const dataFileSelect   = document.getElementById('dataFileSelect');
@@ -26,6 +28,21 @@ const refTabs          = document.querySelectorAll('.ref-tab');
 const dataTabs          = document.querySelectorAll('.data-tab');
 const jsonPanel         = document.getElementById('panel-JSON');
 const dataGraphPanel    = document.getElementById('panel-datagraph');
+
+// ── Line number gutters for textareas ─────────
+function syncLineNums(ta, numsEl) {
+  const count = ta.value.split('\n').length;
+  numsEl.textContent = Array.from({ length: count }, (_, i) => i + 1).join('\n');
+  numsEl.scrollTop = ta.scrollTop;
+}
+function setEditorVal(ta, numsEl, val) {
+  ta.value = val;
+  syncLineNums(ta, numsEl);
+}
+dataEditor.addEventListener('input',  () => syncLineNums(dataEditor, dataEditorNums));
+dataEditor.addEventListener('scroll', () => { dataEditorNums.scrollTop = dataEditor.scrollTop; });
+dataGraphEditor.addEventListener('input',  () => syncLineNums(dataGraphEditor, dataGraphEditorNums));
+dataGraphEditor.addEventListener('scroll', () => { dataGraphEditorNums.scrollTop = dataGraphEditor.scrollTop; });
 
 // ── CodeMirror template editor ────────────────
 const view = new EditorView({
@@ -51,7 +68,6 @@ const view = new EditorView({
 const jsonCsvInput      = document.getElementById('JSONCsvInput');
 const dataGraphCsvInput = document.getElementById('dataGraphCsvInput');
 const jsonRemoveBtn     = document.getElementById('JSONRemoveBtn');
-const dataGraphRemoveBtn = document.getElementById('dataGraphRemoveBtn');
 
 // ── Load data files via Vite's import.meta.glob ──
 // Eagerly import all JSON files from the data/ folder.
@@ -141,7 +157,8 @@ function loadCSV(file, editor, removeBtn) {
   reader.onload = e => {
     try {
       const rows = parseCSV(e.target.result);
-      editor.value = JSON.stringify(rows, null, 2);
+      const numsEl = editor === dataEditor ? dataEditorNums : dataGraphEditorNums;
+      setEditorVal(editor, numsEl, JSON.stringify(rows, null, 2));
       removeBtn.style.display = '';
       removeBtn.title = `Remove CSV data (${file.name})`;
       scheduleRender();
@@ -160,23 +177,149 @@ jsonCsvInput.addEventListener('change', e => {
 });
 
 jsonRemoveBtn.addEventListener('click', () => {
-  dataEditor.value = '{}';
+  setEditorVal(dataEditor, dataEditorNums, '{}');
   jsonRemoveBtn.style.display = 'none';
   scheduleRender();
   logInfo('JSON Payload CSV data removed');
 });
 
-// Data Graph CSV
+// Data Graph CSV — each row becomes a separate numbered entry
 dataGraphCsvInput.addEventListener('change', e => {
-  loadCSV(e.target.files[0], dataGraphEditor, dataGraphRemoveBtn);
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const rows = parseCSV(ev.target.result);
+      if (!rows.length) { logWarn('CSV is empty — no entries created'); return; }
+      const lib = rows.map((row, i) => ({
+        name: String(i + 1).padStart(3, '0'),
+        json: JSON.stringify(row, null, 2)
+      }));
+      dgPersist(lib);
+      dgPopulate(lib, 0);
+      setEditorVal(dataGraphEditor, dataGraphEditorNums, lib[0].json);
+      render();
+      logOK(`CSV imported: ${rows.length} row(s) → ${rows.length} Data Graph entries`);
+    } catch (err) {
+      logError(`CSV import failed: ${err.message}`);
+    }
+  };
+  reader.readAsText(file);
   dataGraphCsvInput.value = '';
 });
 
-dataGraphRemoveBtn.addEventListener('click', () => {
-  dataGraphEditor.value = '{}';
-  dataGraphRemoveBtn.style.display = 'none';
+// ── Data Graph Payload Library ────────────────
+const DG_KEY           = 'mcn-dg-library';
+const dgLibrarySelect  = document.getElementById('dgLibrarySelect');
+const dgPrevBtn        = document.getElementById('dgPrevBtn');
+const dgNextBtn        = document.getElementById('dgNextBtn');
+const dgNewBtn         = document.getElementById('dgNewBtn');
+const dgDeleteBtn      = document.getElementById('dgDeleteBtn');
+const dgClearAllBtn    = document.getElementById('dgClearAllBtn');
+
+function dgGetLibrary() {
+  try {
+    const lib = JSON.parse(localStorage.getItem(DG_KEY) || '[]');
+    return lib.length ? lib : [{ name: '001', json: '{}' }];
+  } catch { return [{ name: '001', json: '{}' }]; }
+}
+
+function dgPersist(lib) {
+  localStorage.setItem(DG_KEY, JSON.stringify(lib));
+}
+
+function dgPopulate(lib, idx = 0) {
+  dgLibrarySelect.innerHTML = '';
+  lib.forEach((e, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = e.name;
+    dgLibrarySelect.appendChild(opt);
+  });
+  dgLibrarySelect.value = String(idx);
+  dgPrevBtn.disabled = idx === 0;
+  dgNextBtn.disabled = idx === lib.length - 1;
+}
+
+function dgApply(lib, idx) {
+  const entry = lib[idx] ?? lib[0];
+  setEditorVal(dataGraphEditor, dataGraphEditorNums, entry.json);
+  logInfo(`Data Graph: switched to "${entry.name}"`);
+  render(); // immediate — don't debounce on explicit switch
+}
+
+// Init on load
+(function () {
+  const lib = dgGetLibrary();
+  dgPopulate(lib, 0);
+  setEditorVal(dataGraphEditor, dataGraphEditorNums, lib[0].json);
+}());
+
+// Auto-save on every keystroke + re-render
+dataGraphEditor.addEventListener('input', () => {
+  const lib = dgGetLibrary();
+  const idx = parseInt(dgLibrarySelect.value);
+  if (lib[idx]) { lib[idx].json = dataGraphEditor.value; dgPersist(lib); }
   scheduleRender();
-  logInfo('Data Graph CSV data removed');
+});
+
+dgLibrarySelect.addEventListener('change', () => {
+  const lib = dgGetLibrary();
+  const idx = parseInt(dgLibrarySelect.value);
+  dgPopulate(lib, idx);
+  dgApply(lib, idx);
+});
+
+dgPrevBtn.addEventListener('click', () => {
+  const lib = dgGetLibrary();
+  const idx = Math.max(0, parseInt(dgLibrarySelect.value) - 1);
+  dgPopulate(lib, idx);
+  dgApply(lib, idx);
+});
+
+dgNextBtn.addEventListener('click', () => {
+  const lib = dgGetLibrary();
+  const idx = Math.min(lib.length - 1, parseInt(dgLibrarySelect.value) + 1);
+  dgPopulate(lib, idx);
+  dgApply(lib, idx);
+});
+
+dgNewBtn.addEventListener('click', () => {
+  const lib = dgGetLibrary();
+  const max = lib.reduce((m, e) => { const n = parseInt(e.name, 10); return isNaN(n) ? m : Math.max(m, n); }, 0);
+  const name = String(max + 1).padStart(3, '0');
+  lib.push({ name, json: '{}' });
+  dgPersist(lib);
+  dgPopulate(lib, lib.length - 1);
+  setEditorVal(dataGraphEditor, dataGraphEditorNums, '{}');
+  render();
+  logOK(`Data Graph "${name}" created ✓`);
+});
+
+dgDeleteBtn.addEventListener('click', () => {
+  const lib = dgGetLibrary();
+  const idx = parseInt(dgLibrarySelect.value);
+  if (!lib[idx]) return;
+  if (!window.confirm(`Delete "${lib[idx].name}"?`)) return;
+  const gone = lib[idx].name;
+  lib.splice(idx, 1);
+  if (!lib.length) lib.push({ name: '001', json: '{}' });
+  dgPersist(lib);
+  const newIdx = Math.min(idx, lib.length - 1);
+  dgPopulate(lib, newIdx);
+  dgApply(lib, newIdx);
+  logInfo(`Data Graph "${gone}" deleted`);
+});
+
+dgClearAllBtn.addEventListener('click', () => {
+  if (!window.confirm('Remove all saved Data Graph payloads?')) return;
+  const fresh = [{ name: '001', json: '{}' }];
+  dgPersist(fresh);
+  dgPopulate(fresh, 0);
+  setEditorVal(dataGraphEditor, dataGraphEditorNums, '{}');
+  render();
+  logInfo('Data Graph library cleared');
 });
 
 // ── Rendering ────────────────────────────────
@@ -213,7 +356,8 @@ function render() {
     const compiled = Handlebars.compile(template);
     const html = compiled(renderData);
     setOutput(html);
-    logOK('Rendered OK');
+    const dgName = document.getElementById('dgLibrarySelect')?.selectedOptions[0]?.text;
+    logOK(`Rendered OK${dgName ? ` · Data Graph: ${dgName}` : ''}`);
   } catch (e) {
     logError(`Template error: ${e.message}`);
     setOutput(`<pre style="color:red;padding:16px;font-size:12px">${escHtml(e.message)}</pre>`);
@@ -302,7 +446,7 @@ dataFileSelect.addEventListener('change', () => {
 function loadDataFile(name) {
   const data = dataFiles[name];
   if (data) {
-    dataEditor.value = JSON.stringify(data, null, 2);
+    setEditorVal(dataEditor, dataEditorNums, JSON.stringify(data, null, 2));
   } else {
     logWarn(`Data file "${name}.json" not found in data/ folder`);
   }

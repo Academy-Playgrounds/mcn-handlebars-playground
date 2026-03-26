@@ -176,6 +176,29 @@ button:hover { border-color: var(--accent); color: #fff; }
 .pane-hint { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-dim); font-size: 11px; }
 .pane-hint code { background: var(--surface); padding: 1px 4px; border-radius: 3px; font-family: monospace; }
 
+/* ── Line number gutter ── */
+.editor-wrap {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+.line-nums {
+  background: #20222e;
+  color: #555e7b;
+  padding: 10px 8px 10px 6px;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: right;
+  user-select: none;
+  white-space: pre;
+  overflow: hidden;
+  min-width: 34px;
+  border-right: 1px solid #1e3a5f;
+  flex-shrink: 0;
+}
+
 textarea {
   flex: 1;
   background: #282A36;
@@ -371,6 +394,47 @@ textarea::selection { background: var(--surface2); }
   white-space: nowrap;
 }
 .btn-remove-csv:hover { background: rgba(243,139,168,0.12); }
+
+/* ── Data Graph payload library ── */
+.dg-label { flex-wrap: wrap; row-gap: 4px; }
+.pane-label-text { white-space: nowrap; }
+.dg-library-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.dg-library-bar select {
+  flex: 1;
+  min-width: 80px;
+  max-width: 220px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.btn-dg {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.btn-dg:hover { background: var(--surface2); }
+.btn-dg:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-dg-del { color: var(--red); border-color: var(--red); }
+.btn-dg-del:hover { background: rgba(243,139,168,0.12); }
+.btn-dg-nav { font-size: 13px; padding: 1px 9px; }
 
 /* ── CodeMirror editor ── */
 #templateEditor {

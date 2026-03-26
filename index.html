@@ -63,22 +63,34 @@
               <button id="JSONRemoveBtn" class="btn-remove-csv" style="display:none" title="Clear CSV data from this tab">✕ Remove CSV</button>
             </div>
           </div>
-          <textarea id="dataEditor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+          <div class="editor-wrap">
+            <div class="line-nums" id="dataEditorNums">1</div>
+            <textarea id="dataEditor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+          </div>
         </div>
         <!-- Data Graph panel -->
         <div class="data-tab-panel hidden" id="panel-datagraph">
-          <div class="pane-label">
-            Data Graph
-            <span class="pane-hint">$dataGraph · use <code>{{get (get @root "$dataGraph") "field"}}</code></span>
+          <div class="pane-label dg-label">
+            <span class="pane-label-text">Data Graph</span>
+            <div class="dg-library-bar">
+              <select id="dgLibrarySelect" title="Switch between saved payloads"></select>
+              <button id="dgPrevBtn"  class="btn-dg btn-dg-nav" title="Previous payload">&#8592;</button>
+              <button id="dgNextBtn"  class="btn-dg btn-dg-nav" title="Next payload">&#8594;</button>
+              <button id="dgNewBtn"   class="btn-dg"            title="Create a new blank payload">+ New</button>
+            </div>
             <div class="tab-actions">
-              <label class="btn-csv-upload" title="Parse CSV and load into editor">
-                ↑ Upload CSV
+              <label class="btn-csv-upload" title="Import CSV — each row becomes a separate Data Graph entry">
+                ↑ Import CSV
                 <input type="file" id="dataGraphCsvInput" accept=".csv">
               </label>
-              <button id="dataGraphRemoveBtn" class="btn-remove-csv" style="display:none" title="Clear CSV data from this tab">✕ Remove CSV</button>
+              <button id="dgDeleteBtn"   class="btn-dg btn-dg-del" title="Delete current payload">Delete</button>
+              <button id="dgClearAllBtn" class="btn-dg btn-dg-del" title="Remove all saved payloads">Clear All</button>
             </div>
           </div>
-          <textarea id="dataGraphEditor" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="{}"></textarea>
+          <div class="editor-wrap">
+            <div class="line-nums" id="dataGraphEditorNums">1</div>
+            <textarea id="dataGraphEditor" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="{}"></textarea>
+          </div>
         </div>
       </div>
     </div>
