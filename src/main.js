@@ -2,6 +2,8 @@ import Handlebars from 'handlebars';
 import { registerMCNHelpers } from './mcn-helpers.js';
 import { SAMPLES } from './samples.js';
 import { EditorView, basicSetup } from 'codemirror';
+import { keymap } from '@codemirror/view';
+import { indentWithTab } from '@codemirror/commands';
 import { html } from '@codemirror/lang-html';
 import { oneDark } from '@codemirror/theme-one-dark';
 
@@ -30,6 +32,7 @@ const view = new EditorView({
   doc: '',
   extensions: [
     basicSetup,
+    keymap.of([indentWithTab]),
     html(),
     oneDark,
     EditorView.updateListener.of(update => {
